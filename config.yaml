@@ -1,0 +1,47 @@
+env:
+  seed: 97
+  gpu_id: 7
+  num_workers: 12
+  batch_size: 256
+  # batch_size: 512
+output:
+  path: '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v7_set1'
+opt: 
+  learning_rate: 5.0e-4
+  min_learning_rate: 1.0e-6
+  weight_decay: 1.0e-5
+  gamma: 0.8
+  epochs: 100
+  patience: 8
+  scheduler: 'cosine' # epoential
+data:
+  train_root: '/home/wang1/shenyiqing/dataset/stad_rois_split/stad_binary1'
+  test_root: '/home/wang1/shenyiqing/dataset/stad_rois_split/stad_binary1_train'
+  num_classes: 2
+  # 
+  # train_root: '/home/wang1/shenyiqing/dataset/PDL1_224/train/'
+  # test_root: '/home/wang1/shenyiqing/dataset/PDL1_224/test/'
+  # num_classes: 2
+  # 
+  # train_root: '/home/wang1/shenyiqing/dataset/STAD/train'
+  # test_root: '/home/wang1/shenyiqing/dataset/STAD/test'
+  # num_classes: 8
+  # 
+  # train_root: '/home/wang1/shenyiqing/dataset/STAD_binary/train'
+  # test_root: '/home/wang1/shenyiqing/dataset/STAD_binary/test'
+  # num_classes: 2
+models:
+  names:
+    - "timm"
+    - "fusion_mlp"
+  timm:
+    model_name: "res2next50"
+    # model_name: 'resnet18'
+    pretrained: True
+  fusion_mlp:
+    hidden_features:
+      - 128
+    adapt_in_features: "min"
+    activation: "leaky_relu"
+    dropout_prob: 0.1
+    normalization: "layer_norm"
