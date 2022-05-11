@@ -2,8 +2,8 @@ import csv
 from itertools import islice
 import numpy as np
 
-csv_path = '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v4/test_prediction_auc.csv'
-out_path = '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v4/test_prediction_patient_auc.csv'
+csv_path = '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v10_set3/test_prediction_auc.csv'
+out_path = '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v10_set3/test_prediction_auc_patient.csv'
 
 print(out_path)
 

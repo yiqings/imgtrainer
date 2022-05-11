@@ -1,22 +1,22 @@
 env:
   seed: 97
-  gpu_id: 7
+  gpu_id: 3
   num_workers: 12
   batch_size: 256
   # batch_size: 512
 output:
-  path: '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v7_set1'
+  path: '/home/wang1/shenyiqing/Results/ImgTrain/may11/pdl1_v1_set3'
 opt: 
-  learning_rate: 5.0e-4
-  min_learning_rate: 1.0e-6
+  learning_rate: 5.0e-3
+  min_learning_rate: 5.0e-5
   weight_decay: 1.0e-5
   gamma: 0.8
   epochs: 100
   patience: 8
   scheduler: 'cosine' # epoential
 data:
-  train_root: '/home/wang1/shenyiqing/dataset/stad_rois_split/stad_binary1'
-  test_root: '/home/wang1/shenyiqing/dataset/stad_rois_split/stad_binary1_train'
+  train_root: '/home/wang1/shenyiqing/dataset/stad_rois_split/stad_binary3'
+  test_root: '/home/wang1/shenyiqing/dataset/stad_rois_split/stad_binary3_train'
   num_classes: 2
   # 
   # train_root: '/home/wang1/shenyiqing/dataset/PDL1_224/train/'
@@ -33,11 +33,16 @@ data:
 models:
   names:
     - "timm"
+    - "timm2"
     - "fusion_mlp"
   timm:
-    model_name: "res2next50"
-    # model_name: 'resnet18'
+    # model_name: "res2next50"
+    model_name: 'resnet18'
     pretrained: True
+    # pretrained: False
+  timm2:
+    model_name: 'resnet18'
+    pretrained: False
   fusion_mlp:
     hidden_features:
       - 128

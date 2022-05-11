@@ -8,7 +8,7 @@ import seaborn as sns
 sns.set()
 
 
-in_path = '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v4/patient_predict'
+in_path = '/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v12_set3/prediction_acc'
 out_path = in_path + '_visual'
 os.makedirs(out_path,exist_ok=True)
 
@@ -55,6 +55,7 @@ for name in os.listdir(in_path):
     cbar.set_ticks([-1, -.5, 0, .5, 1])
     img_name = name.split('.')[0]
     plt.savefig(os.path.join(out_path,f"{img_name}_{label}.png"))
+    plt.close()
     # break
     
     

@@ -223,11 +223,11 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--path', type=str, default='/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v6_set1')
+    parser.add_argument('--path', type=str, default='/home/wang1/shenyiqing/Results/ImgTrain/may10/pdl1_v11_set3')
     parser.add_argument('--data_path', type=str, default=None)
-    parser.add_argument('--name', type=str, default='test')
-    parser.add_argument('--gpu_id', type=int, default=3)
-    parser.add_argument('--choice', type=str, default='acc')
+    parser.add_argument('--name', type=str, default=None)
+    parser.add_argument('--gpu_id', type=int, default=4)
+    parser.add_argument('--choice', type=str, default='auc')
     args = parser.parse_args()  
     
     evaluter = ImgBinaryEvaluater(
