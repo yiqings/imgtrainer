@@ -31,6 +31,8 @@ from utils import(
     FUSION_MLP
 )
 
+
+
 train_transform=transforms.Compose([
     transforms.Resize(224),
     transforms.RandomHorizontalFlip(),
@@ -99,10 +101,13 @@ class ImgBinaryPredicter:
         )
         
         self.model = model.to(self.device)
+        
+        self.data_path = data_path
+        
         print('Initalization complete.')
         
         
-    def evaluate(self):
+    def evalute(self):
         csv_path = os.path.join(self.output_path,'prediction_{}.csv'.format(self.choice))
         f = open(csv_path,'w',encoding='utf-8')
         
@@ -140,6 +145,57 @@ class ImgBinaryPredicter:
                     result = result + list(logits) + list(probs)
                     
                     csv_writer.writerow(result)
+                    
+    def evalute_cam(self):
+        
+        from torchcam.methods import SmoothGradCAMpp
+        from torchcam.utils import overlay_mask
+        
+        from PIL import Image
+
+        from torchvision.transforms.functional import normalize, resize, to_pil_image
+        
+        import matplotlib.pyplot as plt
+        self.model.eval()
+        
+        cam_extractor = SmoothGradCAMpp(self.model.model)
+        
+        for img, img_path in tqdm(self.test_loader):
+
+            
+            img = img.to(self.device)
+            
+            data = {}
+            for idx, model_prefix in enumerate(self.model_prefixs):
+                data[f"{model_prefix}_{IMAGE}"] = img
+            
+
+            out = self.model(data)[self.model.prefix][LOGITS]
+            
+            img_name = [name.split('/')[-1] for name in img_path]
+            
+            for i in range(out.shape[0]):
+                
+                activation_map = cam_extractor(
+                    out[i].squeeze(0).argmax().item(), 
+                    out[i].unsqueeze(0)
+                )
+                
+                mask = activation_map[0].squeeze(0).cpu().numpy()[i]
+                
+
+                mask = overlay_mask(
+                    # to_pil_image(Image.open(os.path.join(self.data_path,img_name[i]))), 
+                    Image.open(os.path.join(self.data_path,img_name[i])).convert("RGB"), 
+                    to_pil_image(mask, mode='F'), 
+                    alpha=0.5
+                )
+                
+                plt.imshow(mask)
+                plt.axis('off')
+                plt.tight_layout()
+                plt.savefig(os.path.join(self.output_path,img_name[i]))
+                   
                 
 
     
@@ -147,10 +203,10 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--path', type=str, default='/home/wang1/shenyiqing/Results/ImgTrain/may10/stad_binary3')
-    parser.add_argument('--data_path', type=str, default='/home/wang1/shenyiqing/dataset/224_gist_split_whole/train')
-    parser.add_argument('--out_path', type=str, default='/home/wang1/shenyiqing/Results/ImgTrain/may10/stad_binary3/train_pred')
-    parser.add_argument('--gpu_id', type=int, default=3)
+    parser.add_argument('--path', type=str, default='/home/yiqing/data/mri_bone/result')
+    parser.add_argument('--data_path', type=str, default='/home/yiqing/data/mri_bone/img/t1c_bone_test')
+    parser.add_argument('--out_path', type=str, default='/home/yiqing/data/mri_bone/result/out/t1c_bone_test')
+    parser.add_argument('--gpu_id', type=int, default=1)
     parser.add_argument('--choice', type=str, default='acc')
     args = parser.parse_args()  
     
@@ -161,4 +217,4 @@ if __name__ == '__main__':
         gpu_id=args.gpu_id,
         choice=args.choice,
     )
-    evaluter.evaluate()
+    evaluter.evalute_cam()
