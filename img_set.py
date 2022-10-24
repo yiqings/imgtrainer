@@ -6,6 +6,9 @@ from torchvision.datasets import ImageFolder
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
 
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
+
 class ImgSet(ImageFolder):
     def __init__(
         self, 

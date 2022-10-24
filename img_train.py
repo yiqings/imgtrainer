@@ -28,6 +28,10 @@ from utils import(
     FUSION_MLP
 )
 
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
+# To fix the EOFError,discribed in https://stackoverflow.com/questions/73125231/pytorch-dataloaders-bad-file-descriptor-and-eof-for-workers0
+
 train_transform=transforms.Compose([
     transforms.Resize(224),
     transforms.RandomHorizontalFlip(),
@@ -61,12 +65,15 @@ class ImgTrainer:
         train_transforms = []
         self.model_prefixs = []
         
-        for mode_name in config.models.names:
-            if mode_name.lower().startswith(TIMM_MODEL):
-                self.model_prefixs.append(mode_name)
+        drop_last=False
+        for model_name in config.models.names:
+            if not model_name.lower().startswith(FUSION_MLP):
+                self.model_prefixs.append(model_name)
                 train_transforms.append(train_transform)
 
-        
+            if model_name.lower().startswith('mem_vit'):
+                drop_last=True
+                
         trainset = ImgSet(
             root=config.data.train_root,
             transform_list=train_transforms, 
@@ -76,7 +83,9 @@ class ImgTrainer:
             dataset = trainset,
             batch_size = config.env.batch_size,
             shuffle = True,
+            pin_memory=False,
             num_workers = config.env.num_workers,
+            drop_last=drop_last,
         )
         
         testset = ImgSet(
@@ -87,8 +96,9 @@ class ImgTrainer:
         test_loader = DataLoader(
             dataset = testset,
             batch_size = config.env.batch_size,
-            shuffle = False,
+            shuffle = True,
             num_workers = config.env.num_workers,
+            drop_last=drop_last,
         )
         
         self.train_loader = train_loader 
@@ -104,7 +114,7 @@ class ImgTrainer:
             os.makedirs(os.path.join(self.output_path,'figures'), exist_ok=True)
         
     
-        self.logging = open(os.path.join(self.output_path,'logging.txt'), 'w')
+        self.logging = open(os.path.join(self.output_path,'logging.txt'), 'w+')
         copyfile(config_path,os.path.join(self.output_path,'config.yaml'))
         
         
@@ -262,7 +272,6 @@ class ImgTrainer:
         train_auc = _train_auc_recorder.auc
         
         return train_loss, train_acc, train_auc
-    
     
     def _binary_test_per_epoch(self, model):
         _test_loss_recorder = AverageMeter()

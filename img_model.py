@@ -11,7 +11,9 @@ from utils import(
     TIMM_MODEL,
     FUSION_MLP
 )
-from mlp import MLP
+from model.mlp import MLP
+from model.mem_vit import MemorizingTransformer
+from model.prenorm import LabNorm
 import functools
 
 class TIMM(nn.Module):
@@ -21,6 +23,7 @@ class TIMM(nn.Module):
             model_name: str,
             num_classes: Optional[int] = 0,
             pretrained: Optional[bool] = True,
+            prenorm: Optional[bool] = False,
     ):
         super(TIMM, self).__init__()
         self.prefix = prefix 
@@ -28,6 +31,11 @@ class TIMM(nn.Module):
         self.label_key = f"{LABEL}"
         
         self.num_classes = num_classes
+        
+        self.normlize = LabNorm() if prenorm else nn.Identity()
+        
+        if prenorm:
+            print('Using Prenorm scheme.')
         
         self.model = timm.create_model(
             model_name, 
@@ -46,8 +54,62 @@ class TIMM(nn.Module):
         batch
     ):
         data = batch[self.data_key]
-        
+        data = self.normlize(data)
         features = self.model(data)
+        logits = self.head(features)
+            
+        return {
+            self.prefix: {
+                LOGITS: logits,
+                FEATURES: features,
+            }
+        }     
+        
+
+class MEMORYVIT(nn.Module):
+    def __init__(
+            self,
+            prefix: str,
+            num_classes: Optional[int] = 0,
+            batch_size=32,
+    ):
+        super(MEMORYVIT, self).__init__()
+        self.prefix = prefix 
+        self.data_key = f"{prefix}_{IMAGE}"
+        self.label_key = f"{LABEL}"
+        
+        self.num_classes = num_classes
+        
+        self.model = MemorizingTransformer(
+                image_size=224,
+                num_tokens=128,  # number of tokens
+                dim=128,  # dimension
+                dim_head=128,  # dimension per attention head
+                depth=7,  # number of layers
+                memorizing_layers=(
+                    7 - 1,
+                ),  # which layers to have ANN memories
+                max_knn_memories=8192,  # maximum ANN memories to keep (once it hits this capacity, it will be reset for now, due to limitations in faiss' ability to remove entries)
+                num_retrieved_memories=32,  # number of ANN memories to retrieve
+                # num_classes=num_classes,  # number of classes
+                global_pool=True,
+            )
+        
+        self.knn_memories = self.model.create_knn_memories(batch_size=batch_size)
+        
+        self.out_features = 128
+        
+        self.head = nn.Linear(self.out_features, num_classes) if num_classes > 0 else nn.Identity()
+        self.head.apply(init_weights)
+        
+     
+    def forward(
+        self, 
+        batch
+    ):
+        data = batch[self.data_key]
+        # print(data.shape)
+        features = self.model(data, self.knn_memories)
         logits = self.head(features)
             
         return {
@@ -157,7 +219,13 @@ def create_model(config, num_classes):
                     prefix = model_name,
                     model_name = model_config.model_name,
                     num_classes = num_classes,
-                    pretrained = model_config.pretrained if hasattr(model_config, "pretrained") else True
+                    pretrained = model_config.pretrained if hasattr(model_config, "pretrained") else True,
+                    prenorm = model_config.prenorm if hasattr(model_config, "prenorm") else False,
+            )
+        elif model_name.lower().startswith('mem_vit'):
+            model = MEMORYVIT(
+                    prefix = model_name,
+                    num_classes = num_classes,
             )
         elif model_name.lower().startswith(FUSION_MLP):
             fusion_model = functools.partial(
