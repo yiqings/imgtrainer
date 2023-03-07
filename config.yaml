@@ -4,7 +4,7 @@ env:
   num_workers: 8
   batch_size: 256
 output:
-  path: '/home/yiqing/data/crc/result/resnet18_prenorm3'
+  path: '/data/crc/result/'
 opt: 
   learning_rate: 1.0e-3
   min_learning_rate: 5.0e-5
@@ -14,8 +14,8 @@ opt:
   patience: 8
   scheduler: 'cosine' # epoential
 data:
-  train_root: '/home/yiqing/data/crc/NCT-CRC-HE-100K-NONORM'
-  test_root: '/home/yiqing/data/crc/CRC-VAL-HE-7K'
+  train_root: '/data/crc/NCT-CRC-HE-100K-NONORM'
+  test_root: '/data/crc/CRC-VAL-HE-7K'
   num_classes: 9
 models:
   names:
